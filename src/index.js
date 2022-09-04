@@ -8,10 +8,12 @@ import rootReducer from './modules';
 import {Provider} from 'react-redux';
 import logger from 'redux-logger';
 import {composeWithDevTools} from 'redux-devtools-extension';
+import ReduxThunk from 'redux-thunk';
 
 const store = createStore(
   rootReducer,
-  composeWithDevTools(applyMiddleware(logger)),
+  // logger 를 사용하는 경우, logger 가 가장 마지막에 와야 합니다.
+  composeWithDevTools(applyMiddleware(ReduxThunk, logger)),
 ); // 여러개의 미들웨어를 적용할 수 있습니다.
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
