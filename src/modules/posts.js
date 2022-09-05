@@ -23,6 +23,9 @@ const CLEAR_POST = 'CLEAR_POST';
 
 // 액션 생성 함수
 export const clearPost = () => ({type: CLEAR_POST});
+export const goHome = navigate => (dispatch, getState) => {
+  navigate('/');
+};
 
 // // 미들웨어
 // // thunk 를 사용할 때, 꼭 모든 액션들에 대해 액션 생성 함수를 만들 필요는 없습니다.
