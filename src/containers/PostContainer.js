@@ -1,6 +1,6 @@
 import React, {useEffect} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
-import {useNavigate} from 'react-router-dom';
+import {useLocation, useNavigate} from 'react-router-dom';
 import Post from '../components/Post';
 import {clearPost, getPost, goHome} from '../modules/posts';
 
@@ -21,7 +21,7 @@ function PostContainer({postId}) {
     // return () => {
     //   dispatch(clearPost());
     // };
-  }, [postId, dispatch, data]);
+  }, [postId, dispatch]);
 
   if (loading && !data) return <div>로딩중...</div>; // 로딩중이고 데이터 없을때만
   if (error) return <div>에러 발생!</div>;
