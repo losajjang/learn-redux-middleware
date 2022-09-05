@@ -18,6 +18,31 @@ export const createPromiseThunk = (type, promiseCreator) => {
   };
 };
 
+// 특정 id 를 처리하는 Thunk 생성 함수
+const defaultIdSelector = param => param;
+export const createPromiseThunkById = (
+  type,
+  promiseCreator,
+  // 파라미터에서 id 를 어떻게 선택할 지 정의하는 함수입니다.
+  // 기본값으로는 파라미터를 그대로 id 로 사용합니다.
+  // 하지만 만약 파라미터가 {id:1, details:true} 이런 형태라면
+  // idSelector 를 param => param.id 이런식으로 설정할 수 있겠죠.
+  idSelector = defaultIdSelector,
+) => {
+  const [SUCCESS, ERROR] = [`${type}_SUCCESS`, `${type}_ERROR`];
+
+  return param => async dispatch => {
+    const id = idSelector(param);
+    dispatch({type, meta: id});
+    try {
+      const payload = await promiseCreator(param);
+      dispatch({type: SUCCESS, payload, meta: id});
+    } catch (e) {
+      dispatch({type: ERROR, error: true, payload: e, meta: id});
+    }
+  };
+};
+
 // 리듀서에서 사용할 수 있는 여러 유틸 함수들입니다.
 export const reducerUtils = {
   // 초기 상태. 초기 data 값은 기본적으로 null 이지만
@@ -50,14 +75,14 @@ export const reducerUtils = {
 
 // 비동기 관련 액션들을 처리하는 리듀서를 만들어 줍니다.
 // type 은 액션의 타입 key 는 상태의 key (예: posts, post) 입니다.
-export const handleAsyncActions = (type, key) => {
+export const handleAsyncActions = (type, key, keepData = false) => {
   const [SUCCESS, ERROR] = [`${type}_SUCCESS`, `${type}_ERROR`];
   return (state, action) => {
     switch (action.type) {
       case type:
         return {
           ...state,
-          [key]: reducerUtils.loading(),
+          [key]: reducerUtils.loading(keepData ? state[key].data : null),
         };
       case SUCCESS:
         return {
@@ -67,7 +92,46 @@ export const handleAsyncActions = (type, key) => {
       case ERROR:
         return {
           ...state,
-          [key]: reducerUtils.error(action.error),
+          [key]: reducerUtils.error(action.payload),
+        };
+      default:
+        return state;
+    }
+  };
+};
+
+// id 별로 처리하는 유틸 함수
+export const handleAsyncActionById = (type, key, keepData = false) => {
+  const [SUCCESS, ERROR] = [`${type}_SUCCESS`, `${type}_ERROR`];
+  return (state, action) => {
+    const id = action.meta;
+    switch (action.type) {
+      case type:
+        return {
+          ...state,
+          [key]: {
+            ...state[key],
+            [id]: reducerUtils.loading(
+              // state[key][id] 가 만들어져 있지 않을 수도 있으니 유효성을 먼저 검사 후 data 조회
+              keepData ? state[key][id] && state[key][id].data : null,
+            ),
+          },
+        };
+      case SUCCESS:
+        return {
+          ...state,
+          [key]: {
+            ...state[key],
+            [id]: reducerUtils.success(action.payload),
+          },
+        };
+      case ERROR:
+        return {
+          ...state,
+          [key]: {
+            ...state[key],
+            [id]: reducerUtils.error(action.payload),
+          },
         };
       default:
         return state;
